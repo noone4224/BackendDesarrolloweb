@@ -6,16 +6,31 @@ var OptionSchema = new Schema ({ //Subdocument in QuestionSchema
         type: String,
         required: true
     },
-    votes: Number
+    votes: {
+        type: Number,
+        default: 0
+    }
 })
+
+function notEmpty(arr) {
+    return arr.length > 0;
+}
 
 var QuestionSchema = new Schema ({ //Subdocument in SurveySchema
     title: {
         type: String,
         required: true
     }, 
-    options: [OptionSchema]
+    options: {
+        type: [OptionSchema],
+        required: true,
+        validate: [notEmpty, "Se necesitan opciones para crear encuesta"],
+    }
 });
+
+function notEmptyQuestions(arr) {
+    return arr.length > 0;
+}
 
 var SurveySchema = new Schema({
     title: {
@@ -34,7 +49,11 @@ var SurveySchema = new Schema({
         type: String,
         required: true
     },
-    questions: [QuestionSchema],
+    questions: {
+        type: [QuestionSchema],
+        required: true,
+        validate: [notEmptyQuestions, "Se necesitan preguntar para crear la encuesta"]
+    },
     city: {
         type: String,
         required: true

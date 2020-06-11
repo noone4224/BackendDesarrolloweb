@@ -41,31 +41,54 @@ var Survey = require('./app/models/survey');
 //post and get surveys
 router.route('/surveys').post(async function(req, res){
     var survey = new Survey();
+    var inputQuestions;
+    try {
+        if(req.body.questions){
+            inputQuestions = JSON.parse(req.body.questions);
+        }
+    } catch (error){
+        res.status(500).send(err);
+        return;
+    }
 
     survey.title = req.body.title;
     survey.startDate = req.body.startDate;
     survey.endDate = req.body.endDate;
     survey.creationDate = req.body.creationDate;
-    survey.questions = [];
     survey.city = req.body.city;
     survey.state = req.body.state;
     survey.isPublish = false;
-
-    // if(!survey.title || !survey.startDate || !survey.endDate || !survey.creationDate || !survey.city || !survey.state){
-    //     res.status(400).send(err);
-    //     return;
-    // }
+    survey.questions = [];
+    
+    // console.log(inputQuestions);
+    if(inputQuestions != undefined){
+        inputQuestions.forEach(question => {
+            survey.questions.push(
+                {
+                    title: question.title,
+                    options: question.options
+                }
+            );
+        });
+    }
+    
 
     try {
+        console.log(survey.questions.length);
+
         await survey.save(function (err){
             if(err){
-                if(!survey.title || !survey.startDate || !survey.endDate || !survey.creationDate || !survey.city || !survey.state){
-                    res.status(400).send(err);
+                if((survey.questions === undefined || survey.questions.length == 0) || !survey.title || !survey.startDate || !survey.endDate || !survey.creationDate || !survey.city || !survey.state){
+                    res.status(400).send({mensaje: "Uno de los campos no fue llenado correctamente"});
+                    return;
+                }
+                if(err._message == "Survey validation failed"){
+                    res.status(400).send({ mensaje: "Las preguntas de la encuesta no han sido llenados correctamente" });
                     return;
                 }
                 res.status(500).send(err);
             }else{
-                res.json({mensaje: "Encuesta creada"});
+                res.status(201).send({ mensaje: "Encuesta creada con éxito." });
             }
         });
 
@@ -83,17 +106,17 @@ router.route('/surveys').post(async function(req, res){
     });
 });
 
-//get specific survey, delete specific survey and update specific survey
+//get specific survey and delete specific survey
 router
   .route("/surveys/:id_survey")
   .get(function (req, res) {
     Survey.findById(req.params.id_survey, function (error, survey) {
       if (error) {
-        res.status(404).send({ message: "not found" });
+        res.status(404).send({ message: "La encuesta no fue encontrada." });
         return;
       }
       if (survey == null) {
-        res.status(404).send({ survey: "not found" });
+        res.status(404).send({ survey: "La encuesta no fue encontrada." });
         return;
       }
       res.status(200).send(survey);
@@ -106,36 +129,36 @@ router
       },
       function (err, alumno) {
         if (err) {
-          res.status(404).send(err);
+          res.status(404).send({message: "La encuesta no fue encontrada."});
           return;
         }
-        res.status(200).send({ mensaje: "borrado con exito" });
+        res.status(200).send({ mensaje: "Encuesta borrada con exito." });
       }
     );
-  })
-  .put(function (req, res) {
-    Survey.findById(req.params.id_survey, async function (err, survey) {
-      if (err) {
-        res.send(err);
-        return;
-      }
-      if(survey.isPublish == false){
-        survey.isPublish = true;
-      }else{
-        survey.isPublish = false;
-      }
-      await survey.save(function (err) {
-        if (err) {
-          res.status(500).send(err);
-          return;
-        }
-        res.json({ message: "encuesta actualizada" });
-      });
-    });
   });
+//   .put(function (req, res) {
+//     Survey.findById(req.params.id_survey, async function (err, survey) {
+//       if (err) {
+//         res.send(err);
+//         return;
+//       }
+//       if(survey.isPublish == false){
+//         survey.isPublish = true;
+//       }else{
+//         survey.isPublish = false;
+//       }
+//       await survey.save(function (err) {
+//         if (err) {
+//           res.status(500).send(err);
+//           return;
+//         }
+//         res.json({ message: "encuesta actualizada" });
+//       });
+//     });
+//   });
 
-router
-  .route("/surveys/turn/:id_survey")
+//Toggle survey to be Hidden or Published
+router.route("/surveys/:id_survey/turn")
   .put(function (req, res) {
     Survey.findById(req.params.id_survey, async function (err, survey) {
       if (err) {
@@ -149,13 +172,46 @@ router
       }
       await survey.save(function (err) {
         if (err) {
-          res.status(500).send(err);
+          res.status(500).send({message: "Hubo un error al hacer la operación."});
           return;
         }
-        res.json({ message: "encuesta actualizada" });
+        res.status(200).send({ message: "Estatus de la encuesta cambió con éxito." });
       });
     });
   });
+
+
+//Add votes to a specific survey
+router.route("/surveys/:id_survey/addVotes")
+.put(function (req, res) {
+  Survey.findById(req.params.id_survey, async function (err, survey) {
+    if (err) {
+      res.status(404).send(err);
+      return;
+    }
+    
+    var selectedOptions = JSON.parse(req.body.selectedOptions);
+
+    var i = 0;
+
+    survey.questions.forEach(question => {
+        question.options.forEach(option =>{
+            if(option.title == selectedOptions[i]){
+                survey.questions.id(question._id).options.id(option._id).votes++;
+            }
+        });
+        i++;
+    })
+
+    await survey.save(function (err) {
+      if (err) {
+        res.status(500).send("Hubo un error al hacer la operación");
+        return;
+      }
+      res.status(200).send({ message: "Voto agregado." });
+    });
+  });
+});
 
 app.use('/api', router); //url base de nuestro api que tiene las rutas en el router
 
