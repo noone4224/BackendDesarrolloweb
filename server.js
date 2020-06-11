@@ -2,7 +2,13 @@ var express = require('express'); //importar express
 var app = express();
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
-
+const cors = require("cors");
+const corsOptions = {
+    origin: "*",
+    optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+app.options("*", cors());
 app.use(morgan('dev'));
 
 app.use(bodyParser.urlencoded({extended: true}));
