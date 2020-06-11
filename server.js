@@ -51,6 +51,29 @@ router.route('/surveys').post(async function(req, res){
         return;
     }
 
+    if(!req.body.title){
+        res.status(400).send({error: "La encuesta tiene que tener un titulo para ser creada"});
+        return;
+    }else if(!req.body.startDate){
+        res.status(400).send({error: "La encuesta tiene que tener una fecha de comienzo para ser creada"});
+        return;
+    }else if(!req.body.endDate){
+        res.status(400).send({error: "La encuesta tiene que tener una fecha de término para ser creada"});
+        return;
+    }else if(!req.body.creationDate){
+        res.status(400).send({error: "La encuesta tiene que tener una fecha de creación para ser creada"});
+        return;
+    }else if(!req.body.city){
+        res.status(400).send({error: "La encuesta tiene que tener una ciudad para ser creada"});
+        return;
+    }else if(!req.body.state){
+        res.status(400).send({error: "La encuesta tiene que tener un estado para ser creada"});
+        return;
+    }else if(!req.body.questions){
+        res.status(400).send({error: "La encuesta tiene que tener preguntas para ser creada"});
+        return;
+    }
+
     survey.title = req.body.title;
     survey.startDate = req.body.startDate;
     survey.endDate = req.body.endDate;
@@ -71,7 +94,6 @@ router.route('/surveys').post(async function(req, res){
             );
         });
     }
-    
 
     try {
         console.log(survey.questions.length);
@@ -190,7 +212,17 @@ router.route("/surveys/:id_survey/addVotes")
       return;
     }
     
+    if(!req.body.selectedOptions){
+        res.status(400).send({error: "Tiene que haber opciones seleccionadas"});
+        return;
+    }
     var selectedOptions = JSON.parse(req.body.selectedOptions);
+
+    if(selectedOptions.length == 0){
+        res.status(400).send({error: "Tiene que haber opciones seleccionadas"});
+        return;
+    }
+
 
     var i = 0;
 
