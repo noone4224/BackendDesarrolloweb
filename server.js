@@ -43,6 +43,7 @@ router.get('/', function(req, res){
 
 //Models declaration
 var Survey = require('./app/models/survey');
+var User = require('./app/models/user');
 
 //post and get surveys
 router.route('/surveys').post(async function(req, res){
@@ -133,6 +134,69 @@ router.route('/surveys').post(async function(req, res){
         res.status(200).send(surveys);
     });
 });
+
+
+//post and get surveys
+router.route('/users').post(async function(req, res){
+  var user = new User();
+
+  if(!req.body.name){
+      res.status(400).send({error: "El usuario tiene que tener un nombre para ser creado"});
+      return;
+  }else if(!req.body.firstLasName){
+      res.status(400).send({error: "El usuario tiene que tener un apellido para ser creado"});
+      return;
+  }else if(!req.body.secondLastName){
+      res.status(400).send({error: "El usuario tiene que tener un apellido para ser creado"});
+      return;
+  }else if(!req.body.email){
+      res.status(400).send({error: "El usuario tiene que tener un correo para ser creado"});
+      return;
+  }
+
+  user.name = req.body.name;
+  user.firstLastName = req.body.firstLastName;
+  user.secondLastName = req.body.secondLastName;
+  user.email = req.body.email;
+  
+  try {
+      await user.save(function (err){
+          if(err){
+              if(!user.name || !user.firstLasName || !user.secondLastName || !user.email){
+                  res.status(400).send({mensaje: "Uno de los campos no fue llenado correctamente"});
+                  return;
+              }
+              if(err._message == "Survey validation failed"){
+                  res.status(400).send({ mensaje: "Los campos para crear el usuario no fueron recibidos como se esperaba." });
+                  return;
+              }
+              res.status(500).send(err);
+          }else{
+              res.status(201).send({ mensaje: "Usuario creado con éxito." });
+          }
+      });
+
+  } catch(error){
+      res.status(500).send(err);
+  }
+});
+
+//get specific survey and delete specific survey
+router
+  .route("/users/:id_user")
+  .get(function (req, res) {
+    User.findById(req.params.id_user, function (error, user) {
+      if (error) {
+        res.status(404).send({ message: "El usuario no fue encontrado." });
+        return;
+      }
+      if (user == null) {
+        res.status(404).send({ user: "El usuario no fue encontrado." });
+        return;
+      }
+      res.status(200).send(user);
+    });
+  });
 
 //get specific survey and delete specific survey
 router
